@@ -38,7 +38,9 @@
 #ifdef WIN32
 #undef SOCKET
 #include <winsock2.h>
+#ifdef MINGW32
 #define EWOULDBLOCK WSAEWOULDBLOCK
+#endif
 #define close closesocket
 #define read(sock,buf,len) recv(sock,buf,len,0)
 #define write(sock,buf,len) send(sock,buf,len,0)
@@ -56,6 +58,10 @@
 #include <netdb.h>
 #endif
 #include "tls.h"
+
+#ifdef _MSC_VER
+#  define snprintf _snprintf
+#endif
 
 void PrintInHex(char *buf, int len);
 
@@ -84,6 +90,13 @@ ReadFromRFBServer(rfbClient* client, char *out, unsigned int n)
 	int nn=n;
 	rfbClientLog("ReadFromRFBServer %d bytes\n",n);
 #endif
+
+  /* Handle attempts to write to NULL out buffer that might occur
+     when an outside malloc() fails. For instance, memcpy() to NULL
+     results in undefined behaviour and probably memory corruption.*/
+  if(!out)
+    return FALSE;
+
   if (client->serverPort==-1) {
     /* vncrec playing */
     rfbVNCRec* rec = client->vncRec;
@@ -105,7 +118,7 @@ ReadFromRFBServer(rfbClient* client, char *out, unsigned int n)
 	  diff.tv_sec--;
 	  diff.tv_usec+=1000000;
         }
-#ifndef __MINGW32__
+#ifndef WIN32
         sleep (diff.tv_sec);
         usleep (diff.tv_usec);
 #else
