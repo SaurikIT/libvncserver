@@ -70,7 +70,7 @@
 #define SOCKET int
 #else
 #include <rfb/rfbconfig.h>
-#include <rfb/rfbint.h>
+#include <stdint.h>
 #endif
 
 #ifdef LIBVNCSERVER_HAVE_LIBZ
